@@ -1,4 +1,4 @@
-publicar loadbalances:
+publicar loadbalancer:
 minikube tunnel
 
 guardar secret desde archivo:
