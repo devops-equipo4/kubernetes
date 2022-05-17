@@ -40,6 +40,13 @@ spec:
         image: yeasy/simple-web:latest
         ports:
         - containerPort: 80
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512M
+          limits:
+            memory: 1024M
+            cpu: 1000m
         volumeMounts:
           - mountPath: "/usr/share/python"
             name: hostpath
