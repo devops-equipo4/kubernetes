@@ -9,6 +9,11 @@ spec:
   selector:
     matchLabels:
       app: simple-web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2 
+      maxUnavailable: 0
   template:
     metadata:
       labels:
@@ -19,3 +24,9 @@ spec:
         image: yeasy/simple-web:latest
         ports:
         - containerPort: 80
+        volumeMounts:
+          - mountPath: "/usr/share/python"
+            name: hostpath
+      volumes:
+        - name: hostpath
+          emptyDir: {}
