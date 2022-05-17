@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: backend
+  name: backend
+spec:
+  replicas: 2
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate  
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - image: luismellareyes/backend
+        name: backend
+        env:
+        - name: ENTORNO
+          valueFrom:
+            configMapKeyRef:
+              name: backend-cm
+              key: entorno
+        - name: PUERTO
+          value: '8084' 
+        - name: USER
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: user
+        - name: PASS
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: pass
+        resources:
+        livenessProbe:
+          httpGet:
+            path: /rest/msdxc/dxc?sueldo=1000000&ahorro=8000000
+            port: 8084
+          initialDelaySeconds: 60
+          periodSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /rest/msdxc/dxc?sueldo=1000000&ahorro=8000000
+            port: 8084
+          initialDelaySeconds: 60
+          periodSeconds: 5
+      volumes:
+        - name: empty-storage
+          emptyDir: {}   
+status: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: backend
+  name: backend
+spec:
+  ports:
+  - name: 8084-8084
+    port: 8084
+    protocol: TCP
+    targetPort: 8084
+  selector:
+    app: backend
+  type: ClusterIP
+status:
+  loadBalancer: {}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: devopsg4-app-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: backend
+spec:
+  rules:
+    - host: localhost
+      http:
+        paths:
+          - path: /grupo4
+            pathType: Prefix
+            backend:
+              service:
+                name: backend
+                port:
+                  number: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-cm
+data:
+  entorno: "local"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secret
+data:
+  user: "ZzQ="
+  pass: "QUJDRDEyMzQ="
