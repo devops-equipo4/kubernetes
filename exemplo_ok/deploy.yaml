@@ -9,13 +9,50 @@ spec:
   selector:
     matchLabels:
       app: simple-web
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2 
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         app: simple-web
     spec:
       containers:
-      - name: simple-web
+      - env:
+        - name: ENV_VAR
+          value: "KUBERNETES_USACH_TEST"
+        envFrom:
+        - configMapRef:
+            name: configmap-env
+        livenessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          tcpSocket:
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        name: simple-web
         image: yeasy/simple-web:latest
         ports:
         - containerPort: 80
+        resources:
+          requests:
+            cpu: 100m
+            memory: 512M
+          limits:
+            memory: 1024M
+            cpu: 1000m
+        volumeMounts:
+          - mountPath: "/usr/share/python"
+            name: hostpath
+      volumes:
+        - name: hostpath
+          emptyDir: {}
+        - name: configmap-env
+          configMap:
+            name: configmap-env
